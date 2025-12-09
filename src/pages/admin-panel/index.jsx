@@ -23,7 +23,7 @@ const [users, setUsers] = useState([])
 
 const fetchUsers = async () => {
 try {
-const res = await fetch('http://localhost:8888/api/created-users')
+const res = await fetch('https://mern-vizitka.vercel.app/api/created-users')
 const data = await res.json()
 setUsers(data)
 } catch (err) {
@@ -41,7 +41,7 @@ setForm(prev => ({ ...prev, [name]: value }))
 }
 
 const handleSubmit = async () => {
-const res = await fetch('http://localhost:8888/api/create-users', {
+const res = await fetch('https://mern-vizitka.vercel.app/api/create-users', {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify(form),
@@ -59,7 +59,7 @@ const handleDelete = async (id) => {
 if (!window.confirm('Удалить пользователя?')) return
 
 
-const res = await fetch(`http://localhost:8888/api/created-users/${id}`, {
+const res = await fetch(`https://mern-vizitka.vercel.app/api/created-users/${id}`, {
   method: 'DELETE'
 })
 

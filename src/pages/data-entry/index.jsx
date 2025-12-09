@@ -92,14 +92,14 @@ fetchVerifiers()
 const { user } = useAuth()
 const [verifiers, setVerifiers] = useState([])
 const fetchVerifiers = async () => {
-const res = await fetch('http://localhost:8888/api/created-users')
+const res = await fetch('https://mern-vizitka.vercel.app/api/created-users')
 const users = await res.json()
 const usernames = users.map(u => u.username).slice(0, 4)
 setVerifiers(usernames)
 }
 
  const fetchEntries = async () => {
-  const res = await fetch('http://localhost:8888/api/entries')
+  const res = await fetch('https://mern-vizitka.vercel.app/api/entries')
   const data = await res.json()
   setEntries(data)
   setOriginalEntries(data) // Сохраняем оригинальный порядок
@@ -268,7 +268,7 @@ const resetSearch = () => {
 }
 const handleEditSave = async (id, field, value) => {
 try {
-const res = await fetch(`http://localhost:8888/api/entries/${id}`, {
+const res = await fetch(`https://mern-vizitka.vercel.app/api/entries/${id}`, {
 method: 'PATCH',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({ [field]: value }),
@@ -438,7 +438,7 @@ createdBy: username
 }
 
 
-const res = await fetch('http://localhost:8888/api/entries', {
+const res = await fetch('https://mern-vizitka.vercel.app/api/entries', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(payload),
@@ -453,7 +453,7 @@ setEntries(updatedEntries)
 
 // Если больше 1500 — вызываем очистку старых
 if (updatedEntries.length > 1500) {
-  const cleanRes = await fetch('http://localhost:8888/api/entries/old', {
+  const cleanRes = await fetch('https://mern-vizitka.vercel.app/api/entries/old', {
     method: 'DELETE',
   })
   if (!cleanRes.ok) throw new Error('Ошибка при удалении старых записей')
@@ -1179,7 +1179,7 @@ sx={{
                     if (!confirmed) return
 
                     try {
-                      const res = await fetch(`http://localhost:8888/api/entries/${entry._id}`, {
+                      const res = await fetch(`https://mern-vizitka.vercel.app/api/entries/${entry._id}`, {
                         method: 'DELETE',
                       })
 
@@ -1280,7 +1280,7 @@ sx={{
         console.log('Изображение загружено в ImageBan:', newUrl)
 
         // Обновляем запись в базе данных
-        const updateResponse = await fetch(`http://localhost:8888/api/entries/${photoDialog.entryId}`, {
+        const updateResponse = await fetch(`https://mern-vizitka.vercel.app/api/entries/${photoDialog.entryId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ [photoDialog.field]: newUrl }),
