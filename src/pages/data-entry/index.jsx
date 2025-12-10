@@ -208,28 +208,41 @@ const handleShowSelectedOnly = () => {
 
 // Клонирование выбранной записи
 // Новый аргумент entryId
-const handleCloneSelected = (entryId) => { 
-  if (!entryId) {
-    alert('Не удалось определить запись для клонирования');
+const handleCloneSelected = () => {
+  if (!selectedRow) {
+    alert('Выберите запись для клонирования');
     return;
   }
 
-  // Отключить активное редактирование
+  // Отключить активное редактирование для предотвращения DOM-ошибок
   setEditingCell({ id: null, field: null });
 
-  // Ищем запись по переданному ID
-  const entryToClone = entries.find(e => e._id === entryId);
+  const entryToClone = entries.find(e => e._id === selectedRow);
   if (!entryToClone) return;
 
   setFormData({
-    // ... Заполнение формы
+    date: new Date().toISOString().split('T')[0],
+    customer: entryToClone.customer,
+    verifier: entryToClone.verifier,
+    model: entryToClone.model,
+    serial: entryToClone.serial,
+    year: entryToClone.year,
+    maxD: entryToClone.maxD,
+    registry: entryToClone.registry,
+    mp: entryToClone.mp,
+    location: entryToClone.location,
+    certificate: entryToClone.certificate,
+    photo1: null,
+    photo2: null,
+    photo1Url: entryToClone.photo1Url,
+    photo2Url: entryToClone.photo2Url,
   });
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // ✅ Теперь сброс выделения безопасен и синхронен с клонированием
-  setSelectedRow(null); 
-  setSelectedRows([]); 
+  // ❗ УДАЛЯЕМ ПРОБЛЕМНЫЕ СТРОКИ
+  // setSelectedRow(null);
+  // setSelectedRows([]);
 }
 
 
@@ -269,8 +282,8 @@ const resetSearch = () => {
   setIsSearchActive(false);
   setSearchSuggestions([]);
   setSearchResults([]);
-  setEditingCell({ id: null, field: null });  // ДОБАВИТЬ
-  // setEntries(originalEntries);
+  
+  setEntries(originalEntries);
   setSelectedRows([]);
   setSelectedRow(null);
   setPage(0);
@@ -662,10 +675,7 @@ const getUniqueOptions = (field) => {
   return [...new Set(values)]
 }
 
-const currentData = isSearchActive ? searchResults : originalEntries;
-const dataToDisplay = showSelectedOnly
-  ? currentData.filter(entry => selectedRows.includes(entry._id))
-  : currentData;
+
   return (
     <Container maxWidth="xl" sx={{ py: 4, px: { xs: 1, sm: 2, md: 4 } }}>
        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
@@ -1081,7 +1091,7 @@ sx={{
   </TableRow>
 </TableHead>
         <TableBody>
-  {dataToDisplay
+  {entries
     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
     .map((entry, index) => (
       <TableRow 
@@ -1191,7 +1201,7 @@ sx={{
           <Box sx={{ display: 'flex', gap: 1 }}>
             {/* Кнопка клонирования */}
             <Tooltip title="Клонировать запись">
-             // Внутри TableCell:
+            
 <IconButton
   size="small"
   color="primary"

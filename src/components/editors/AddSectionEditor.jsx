@@ -27,7 +27,7 @@ const AddSectionEditor = () => {
   const { updateSectionsOrder } = useDragDrop()
   const { addSection } = useContent()
 
-  const { addSectionToOrder } = useDragDrop()
+  
   const [open, setOpen] = useState(false)
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState('')
@@ -107,7 +107,7 @@ const AddSectionEditor = () => {
       }
 
       await addSection('home', sectionData.sectionName, sectionContent)
-       await addSectionToOrder(sectionData.sectionName)
+   
       updateSectionsOrder(prev => [...prev, sectionData.sectionName])
       setSuccess(`Секция "${sectionData.sectionName}" успешно добавлена!`)
       setTimeout(() => {
