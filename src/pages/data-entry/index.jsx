@@ -26,6 +26,7 @@ import {
 
   
 } from '@mui/material'
+import React from 'react';
 import CloseIcon from '@mui/icons-material/Close'
 import { useState, useEffect, useRef } from 'react'
 import ExcelJS from 'exceljs'
@@ -85,6 +86,7 @@ const [originalEntries, setOriginalEntries] = useState([]) // Для сохра�
   
 const [editingCell, setEditingCell] = useState({ id: null, field: null })
 const [editedValue, setEditedValue] = useState('')
+
 useEffect(() => {
 fetchEntries()
 fetchVerifiers()
@@ -105,16 +107,21 @@ setVerifiers(usernames)
   setOriginalEntries(data) // Сохраняем оригинальный порядок
 }
 const handleSearch = (query) => {
-  setSearchQuery(query)
+  const trimmedQuery = query.trim()
+  setSearchQuery(trimmedQuery)
   
-  if (!query.trim()) {
+  if (!trimmedQuery) {
+    // Если запрос пустой, сразу сбрасываем все
     setSearchSuggestions([])
     setSearchResults([])
     setIsSearchActive(false)
+    setEntries(originalEntries)
+    setSelectedRows([])
+    setShowSelectedOnly(false)
     return
   }
 
-  const lowerQuery = query.toLowerCase()
+  const lowerQuery = trimmedQuery.toLowerCase()
   
   // Автодополнение по 3 полям
   const suggestions = []
@@ -148,15 +155,22 @@ const handleSearch = (query) => {
   setIsSearchActive(true)
 }
 const handleRowSelect = (entryId) => {
-  setSelectedRow(entryId)
   setSelectedRows(prev => {
     if (prev.includes(entryId)) {
-      return prev.filter(id => id !== entryId)
+      // Снимаем выбор
+      const newRows = prev.filter(id => id !== entryId);
+      // Если сняли последний или текущий selectedRow, очищаем selectedRow
+      if (newRows.length === 0 || selectedRow === entryId) {
+        setSelectedRow(null);
+      }
+      return newRows;
     } else {
-      return [...prev, entryId]
+      // Добавляем выбор
+      setSelectedRow(entryId);
+      return [...prev, entryId];
     }
-  })
-}
+  });
+};
 
 // Выделить все на странице
 const handleSelectAllOnPage = () => {
@@ -177,12 +191,15 @@ const handleSelectAllOnPage = () => {
 const handleShowSelectedOnly = () => {
   if (showSelectedOnly) {
     if (isSearchActive) {
+      setEditingCell({ id: null, field: null });
       setEntries(searchResults)
     } else {
+      setEditingCell({ id: null, field: null });
       setEntries(originalEntries)
     }
   } else {
     const filtered = entries.filter(entry => selectedRows.includes(entry._id))
+    setEditingCell({ id: null, field: null });
     setEntries(filtered)
   }
   setShowSelectedOnly(!showSelectedOnly)
@@ -190,66 +207,58 @@ const handleShowSelectedOnly = () => {
 }
 
 // Клонирование выбранной записи
-const handleCloneSelected = () => {
-  if (!selectedRow) {
-    alert('Выберите запись для клонирования');
+// Новый аргумент entryId
+const handleCloneSelected = (entryId) => { 
+  if (!entryId) {
+    alert('Не удалось определить запись для клонирования');
     return;
   }
 
-  // Отключить активное редактирование для предотвращения DOM-ошибок
+  // Отключить активное редактирование
   setEditingCell({ id: null, field: null });
 
-  const entryToClone = entries.find(e => e._id === selectedRow);
+  // Ищем запись по переданному ID
+  const entryToClone = entries.find(e => e._id === entryId);
   if (!entryToClone) return;
 
   setFormData({
-    date: new Date().toISOString().split('T')[0],
-    customer: entryToClone.customer,
-    verifier: entryToClone.verifier,
-    model: entryToClone.model,
-    serial: entryToClone.serial,
-    year: entryToClone.year,
-    maxD: entryToClone.maxD,
-    registry: entryToClone.registry,
-    mp: entryToClone.mp,
-    location: entryToClone.location,
-    certificate: entryToClone.certificate,
-    photo1: null,
-    photo2: null,
-    photo1Url: entryToClone.photo1Url,
-    photo2Url: entryToClone.photo2Url,
+    // ... Заполнение формы
   });
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // ❗ УДАЛЯЕМ ПРОБЛЕМНЫЕ СТРОКИ
-  // setSelectedRow(null);
-  // setSelectedRows([]);
+  // ✅ Теперь сброс выделения безопасен и синхронен с клонированием
+  setSelectedRow(null); 
+  setSelectedRows([]); 
 }
 
 
 // Клонирование нескольких
+// В handleCloneMultiple:
 const handleCloneMultiple = () => {
   if (selectedRows.length === 0) {
     alert('Выберите записи для клонирования')
     return
   }
-
-  const entriesToClone = entries.filter(e => selectedRows.includes(e._id))
   
-  if (entriesToClone.length > 1) {
+  // Берем ID первой выбранной записи
+  const firstEntryId = selectedRows[0]; 
+
+  if (selectedRows.length > 1) {
     const confirmClone = window.confirm(
-      `Вы выбрали ${entriesToClone.length} записей. Будет клонирована только первая. Продолжить?`
+      `Вы выбрали ${selectedRows.length} записей. Будет клонирована только первая. Продолжить?`
     )
     if (!confirmClone) return
   }
 
-  handleCloneSelected()
+  // Вызываем обновленную функцию
+  handleCloneSelected(firstEntryId); 
 }
 
 // Применить поиск
 const applySearch = () => {
   if (searchQuery.trim()) {
+    setEditingCell({ id: null, field: null });
     setEntries(searchResults)
     setPage(0)
   }
@@ -257,15 +266,18 @@ const applySearch = () => {
 
 // Сбросить поиск
 const resetSearch = () => {
-  setSearchQuery('')
-  setSearchSuggestions([])
-  setSearchResults([])
-  setIsSearchActive(false)
-  setEntries(originalEntries)
-  setSelectedRows([])
-  setShowSelectedOnly(false)
-  setPage(0)
-}
+  setIsSearchActive(false);
+  setSearchSuggestions([]);
+  setSearchResults([]);
+  setEditingCell({ id: null, field: null });  // ДОБАВИТЬ
+  // setEntries(originalEntries);
+  setSelectedRows([]);
+  setSelectedRow(null);
+  setPage(0);
+  setTimeout(() => {
+    setSearchQuery('');
+  }, 100);
+};
 const handleEditSave = async (id, field, value) => {
 try {
 const res = await fetch(`https://mern-vizitka.vercel.app/api/entries/${id}`, {
@@ -449,6 +461,7 @@ const newEntry = await res.json()
 
 // Обновление записей и проверка лимита
 const updatedEntries = [newEntry, ...entries]
+setEditingCell({ id: null, field: null });
 setEntries(updatedEntries)
 
 // Если больше 1500 — вызываем очистку старых
@@ -648,6 +661,11 @@ const getUniqueOptions = (field) => {
   const values = entries.map((e) => e[field]).filter(Boolean)
   return [...new Set(values)]
 }
+
+const currentData = isSearchActive ? searchResults : originalEntries;
+const dataToDisplay = showSelectedOnly
+  ? currentData.filter(entry => selectedRows.includes(entry._id))
+  : currentData;
   return (
     <Container maxWidth="xl" sx={{ py: 4, px: { xs: 1, sm: 2, md: 4 } }}>
        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
@@ -680,7 +698,7 @@ const getUniqueOptions = (field) => {
   )}
 </Box>
     {selectedRows.length > 0 && (
-      <>
+      <div>
         <Tooltip title={`Клонировать выбранные (${selectedRows.length})`}>
           <Button
             variant="contained"
@@ -701,37 +719,45 @@ const getUniqueOptions = (field) => {
           }
           label="Только выбранные"
         />
-      </>
+      </div>
     )}
   </Box>
 </Box>
 <Box sx={{ mb: 3 }}>
-  <Autocomplete
+ <Autocomplete
+ 
   freeSolo
   options={searchSuggestions}
   getOptionLabel={(option) => 
     typeof option === 'string' ? option : `${option.value}`
   }
   inputValue={searchQuery}
-  onInputChange={(_, newValue) => handleSearch(newValue)}
-  onChange={(_, newValue) => {
-    if (newValue) {
-      const searchValue = typeof newValue === 'string' ? newValue : newValue.value
-      setSearchQuery(searchValue)
-      handleSearch(searchValue)
-      // Автоматически применяем поиск при выборе из списка
-      const results = entries.filter(entry => {
-        const fieldsToSearch = ['serial', 'model', 'customer']
-        return fieldsToSearch.some(field => {
-          const value = entry[field] || ''
-          return value.toLowerCase().includes(searchValue.toLowerCase())
-        })
-      })
-      setSearchResults(results)
-      setIsSearchActive(true)
-      setEntries(results)
-      setPage(0)
+  onInputChange={(_, newValue) => {
+    // Защита от слишком частых обновлений
+    if (newValue !== searchQuery) {
+      handleSearch(newValue)
     }
+  }}
+ onChange={(_, newValue) => {
+    if (!newValue) return
+    
+    const searchValue = typeof newValue === 'string' ? newValue : newValue.value
+    const lowerValue = searchValue.toLowerCase()
+    
+    const fieldsToSearch = ['serial', 'model', 'customer']
+    const results = entries.filter(entry => {
+      return fieldsToSearch.some(field => {
+        const value = entry[field] || ''
+        return value.toLowerCase().includes(lowerValue)
+      })
+    })
+    
+    // ИСПОЛЬЗУЙТЕ ОДИН ВЫЗОВ set state
+    setSearchQuery(searchValue)
+    setSearchResults(results)
+    setIsSearchActive(true)
+    // setEntries(results) // <--- Оставьте здесь, но помните о конфликте с originalEntries
+    setPage(0)
   }}
   renderInput={(params) => (
     <TextField
@@ -739,6 +765,8 @@ const getUniqueOptions = (field) => {
       placeholder="Поиск по Зав. №, Модели, Заказчику..."
       variant="outlined"
       fullWidth
+      error={false}
+      helperText=""
       InputProps={{
         ...params.InputProps,
         startAdornment: (
@@ -747,7 +775,7 @@ const getUniqueOptions = (field) => {
           </InputAdornment>
         ),
         endAdornment: (
-          <>
+          <div>
             {isSearchActive && (
               <InputAdornment position="end">
                 <Chip
@@ -757,20 +785,32 @@ const getUniqueOptions = (field) => {
                   sx={{ mr: 1 }}
                 />
                 <Tooltip title="Сбросить поиск">
-                  <IconButton onClick={resetSearch} size="small">
+                  <IconButton 
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      resetSearch()
+                    }} 
+                    size="small"
+                  >
                     <RestartAltIcon />
                   </IconButton>
                 </Tooltip>
               </InputAdornment>
             )}
             {params.InputProps.endAdornment}
-          </>
+          </div>
         ),
+      }}
+      sx={{
+        '& .MuiOutlinedInput-root': {
+          transition: 'all 0.2s ease',
+        }
       }}
     />
   )}
   renderOption={(props, option) => (
-    <li {...props}>
+    <li {...props} key={`${option.value}-${option.field}`}>
       <Box sx={{ display: 'flex', flexDirection: 'column' }}>
         <Typography variant="body2">{option.value}</Typography>
         <Typography variant="caption" color="text.secondary">
@@ -882,6 +922,7 @@ sx={{
 />
     ) : (
      <Autocomplete
+   
   freeSolo={!field.options}
   options={field.options || getUniqueOptions(field.name)}
   value={formData[field.name] || ''}
@@ -1040,7 +1081,7 @@ sx={{
   </TableRow>
 </TableHead>
         <TableBody>
-  {entries
+  {dataToDisplay
     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
     .map((entry, index) => (
       <TableRow 
@@ -1057,6 +1098,7 @@ sx={{
         {/* Колонка с чекбоксом для выбора */}
         <TableCell padding="checkbox">
           <Checkbox
+          key={entry._id}
             checked={selectedRows.includes(entry._id)}
             onChange={() => handleRowSelect(entry._id)}
           />
@@ -1076,7 +1118,7 @@ sx={{
           'mp',
           'location',
           'certificate',
-        ].map((field) => (
+        ].map((field, index) => (
           <TableCell
             key={field}
            onClick={() => {
@@ -1149,23 +1191,24 @@ sx={{
           <Box sx={{ display: 'flex', gap: 1 }}>
             {/* Кнопка клонирования */}
             <Tooltip title="Клонировать запись">
-              <IconButton
-                size="small"
-                color="primary"
-              onClick={() => {
-  if (isExportingRef.current) return
-  // минимизируем синхронные state-изменения, вызываем клон в следующем тикe
-  handleRowSelect(entry._id)
-  setSelectedRow(entry._id)
-  // откладываем клонирование в конец текущей очереди — меньше шансов на конфликт с рендерами
-  queueMicrotask(() => {
-    if (!isExportingRef.current) handleCloneSelected()
-  })
-}}
+             // Внутри TableCell:
+<IconButton
+  size="small"
+  color="primary"
+  onClick={() => {
+    if (isExportingRef.current) return
+    
+    // ❌ УДАЛИТЬ: handleRowSelect(entry._id) 
+    // ❌ УДАЛИТЬ: setSelectedRow(entry._id)
 
-              >
-                <ContentCopyIcon/>
-              </IconButton>
+    // Вызываем клонирование напрямую с ID
+    queueMicrotask(() => {
+      if (!isExportingRef.current) handleCloneSelected(entry._id) // Передаем ID
+    })
+  }}
+>
+  <ContentCopyIcon/>
+</IconButton>
             </Tooltip>
             
             {/* Кнопка удаления */}
