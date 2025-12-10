@@ -39,7 +39,7 @@ export const ContentProvider = ({ children }) => {
       setLoading(true)
       console.log('Fetching content...')
       
-      const response = await fetch(`/api/content/${page}`)
+      const response = await fetch(`https://mern-vizitka.vercel.app/api/content/${page}`)
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -69,7 +69,7 @@ export const ContentProvider = ({ children }) => {
     try {
       console.log(`Updating ${page}/${section}:`, newData)
       
-      const response = await fetch(`/api/content/${page}/${section}`, {
+      const response = await fetch(`https://mern-vizitka.vercel.app/api/content/${page}/${section}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -102,7 +102,7 @@ export const ContentProvider = ({ children }) => {
     try {
       console.log(`Adding new section ${section} to ${page}:`, sectionData)
       
-      const response = await fetch(`/api/content/${page}/${section}`, {
+      const response = await fetch(`https://mern-vizitka.vercel.app/api/content/${page}/${section}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -135,7 +135,7 @@ export const ContentProvider = ({ children }) => {
     try {
       console.log(`Deleting section ${section} from ${page}`)
       
-      const response = await fetch(`/api/content/${page}/${section}`, {
+      const response = await fetch(`https://mern-vizitka.vercel.app/api/content/${page}/${section}`, {
         method: 'DELETE',
       })
 

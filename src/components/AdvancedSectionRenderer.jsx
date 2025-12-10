@@ -61,7 +61,7 @@ const AdvancedSectionRenderer = () => {
     try {
       console.log('💾 Saving order to backend:', orderToSave);
       
-      const response = await fetch('/api/reorder-sections/home', {
+      const response = await fetch('https://mern-vizitka.vercel.app/api/reorder-sections/home', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sectionsOrder: orderToSave }),
